@@ -61,33 +61,44 @@ local client = Client(
     "asset_sample"
 )
 
-client.client:add_asset("assets/DamagedHelmet.glb")
 
--- Leave unassigned if you have no assets to provide
-allonet.asset_send_callback = function (name, offset, length)
-    -- return as many bytes as you have of the chunk between offset and offset+length. 
-    -- You may return less than length bytes but the chunk must always start at offset. 
-    -- return 0 if you do not have the asset or chunk.
-end
+local allonet = client.client
+
+allonet:set_asset_request_callback(function (name, offset, length)
+    print("Lua asset got a request for", name)
+    local data = "Helo world"
+    local chunk = string.sub(data, offset, offset + length)
+    if name == "hello" then
+        allonet:asset_send(name, "abc123", offset, string.len(data))
+    else
+        allonet:asset_send(name, nil, offset, 0)
+    end
+end)
 
 -- Leave unassigned if you are not interrested receiving assets
-allonet.asset_receive_callback = function (name, bytes, offset, total_size)
+allonet:set_asset_receive_callback(function (name, bytes, offset, total_size)
     -- Write the bytes received to your cache. 
-end
+    -- print("Received", string.len(bytes), " of", total_size, "bytes for asset", name, ":", bytes)
+    print("Lua asset received some data")
+end)
 
 -- Leave unassigned if you are not interrested in assets
-allonet.asset_state_callback = function (name, state)
+allonet:set_asset_state_callback(function (name, state)
     -- Called as asset availability on the network changes. 
-end
-
--- Initiate a fetch of an asset. 
--- Data for the asset will be provided on `receive_asset_callback` if the asset can be reached
--- or `asset_state_callback` will be called with `navailable` state.
-allonet.asset_request("head")
+    print("Lua asset state changed for", name)
+end)
 
 
 
 local app = App(client)
+
+app.client.delegates.onConnected = function ()
+    print("Connected!")
+    -- Initiate a fetch of an asset. 
+    -- Data for the asset will be provided on `receive_asset_callback` if the asset can be reached
+    -- or `asset_state_callback` will be called with `navailable` state.
+    allonet:asset_request("head")
+end
 
 local mainView = AssetBox(ui.Bounds(0, 1.5, 0,   1, 0.5, 0.1))
 local button = ui.Button(ui.Bounds(0.0, 0.05, 0.0,   0.2, 0.2, 0.1))
@@ -97,6 +108,7 @@ local grabHandle = ui.GrabHandle(ui.Bounds( -0.5, 0.5, 0.3,   0.2, 0.2, 0.2))
 
 button.onActivated = function()
     print("Hello!")
+    begin()
 end
 
 app.mainView = mainView
