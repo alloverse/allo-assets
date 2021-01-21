@@ -4,6 +4,13 @@ local class = require('pl.class')
 local tablex = require('pl.tablex')
 local pretty = require('pl.pretty')
 
+function readall(filename)
+    local fh = assert(io.open(filename, "rb"))
+    local contents = assert(fh:read(_VERSION <= "Lua 5.2" and "*a" or "a"))
+    fh:close()
+    return contents
+end
+
 class.AssetBox(ui.View)
 function AssetBox:_init(bounds)
     self:super(bounds)
@@ -18,7 +25,7 @@ function AssetBox:specification()
     local mySpec = tablex.union(ui.View.specification(self), {
         geometry = {
             type = "asset",
-            name = "85c96ef38aea6342df28"
+            name = "head"
         },
         material = {
         },
@@ -66,10 +73,17 @@ local allonet = client.client
 
 allonet:set_asset_request_callback(function (name, offset, length)
     print("Lua asset got a request for", name)
-    local data = "Helo world"
-    local chunk = string.sub(data, offset, offset + length)
+    
     if name == "hello" then
-        allonet:asset_send(name, "abc123", offset, string.len(data))
+        local data = "Helo world"
+        local chunk = string.sub(data, offset, offset + length)
+        allonet:asset_send(name, chunk, offset, string.len(data))
+    elseif name == "head" then 
+        local data = readall("assets/DamagedHelmet.glb")
+        local chunk = string.sub(data, offset, offset + length - 1)
+        local size = string.len(data)
+        print("sending offset " .. offset .. " length " .. length .. " size " .. size)
+        allonet:asset_send(name, chunk, offset, size)
     else
         allonet:asset_send(name, nil, offset, 0)
     end
@@ -97,7 +111,7 @@ app.client.delegates.onConnected = function ()
     -- Initiate a fetch of an asset. 
     -- Data for the asset will be provided on `receive_asset_callback` if the asset can be reached
     -- or `asset_state_callback` will be called with `navailable` state.
-    allonet:asset_request("head")
+    allonet:asset_request("hello")
 end
 
 local mainView = AssetBox(ui.Bounds(0, 1.5, 0,   1, 0.5, 0.1))
@@ -108,7 +122,6 @@ local grabHandle = ui.GrabHandle(ui.Bounds( -0.5, 0.5, 0.3,   0.2, 0.2, 0.2))
 
 button.onActivated = function()
     print("Hello!")
-    begin()
 end
 
 app.mainView = mainView
