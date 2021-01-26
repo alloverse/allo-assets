@@ -3,6 +3,10 @@ local modules = (...):gsub(".[^.]+.[^.]+$", '') .. "."
 local class = require('pl.class')
 local tablex = require('pl.tablex')
 local pretty = require('pl.pretty')
+require 'asset'
+
+
+local head = FileAsset("assets/DamagedHelmet.glb")
 
 function readall(filename)
     local fh = assert(io.open(filename, "rb"))
@@ -25,7 +29,7 @@ function AssetBox:specification()
     local mySpec = tablex.union(ui.View.specification(self), {
         geometry = {
             type = "asset",
-            name = "head"
+            name = head:id()
         },
         material = {
         },
@@ -69,49 +73,18 @@ local client = Client(
 )
 
 
-local allonet = client.client
+local assets = AssetManager(client.client)
 
-allonet:set_asset_request_callback(function (name, offset, length)
-    print("Lua asset got a request for", name)
-    
-    if name == "hello" then
-        local data = "Helo world"
-        local chunk = string.sub(data, offset, offset + length)
-        allonet:asset_send(name, chunk, offset, string.len(data))
-    elseif name == "head" then 
-        local data = readall("assets/DamagedHelmet.glb")
-        local chunk = string.sub(data, offset, offset + length - 1)
-        local size = string.len(data)
-        print("sending offset " .. offset .. " length " .. length .. " size " .. size)
-        allonet:asset_send(name, chunk, offset, size)
-    else
-        allonet:asset_send(name, nil, offset, 0)
-    end
-end)
-
--- Leave unassigned if you are not interrested receiving assets
-allonet:set_asset_receive_callback(function (name, bytes, offset, total_size)
-    -- Write the bytes received to your cache. 
-    -- print("Received", string.len(bytes), " of", total_size, "bytes for asset", name, ":", bytes)
-    print("Lua asset received some data")
-end)
-
--- Leave unassigned if you are not interrested in assets
-allonet:set_asset_state_callback(function (name, state)
-    -- Called as asset availability on the network changes. 
-    print("Lua asset state changed for", name)
-end)
-
-
+assets:add(head)
 
 local app = App(client)
 
 app.client.delegates.onConnected = function ()
     print("Connected!")
-    -- Initiate a fetch of an asset. 
-    -- Data for the asset will be provided on `receive_asset_callback` if the asset can be reached
-    -- or `asset_state_callback` will be called with `navailable` state.
-    allonet:asset_request("hello")
+    
+    assets:load("hello", function (name, asset)
+        print("Finished ".. name .. ":", asset.data, asset:id())
+    end)
 end
 
 local mainView = AssetBox(ui.Bounds(0, 1.5, 0,   1, 0.5, 0.1))
