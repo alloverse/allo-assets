@@ -15,5 +15,7 @@ Application sources are in `lua/`.
 To start the app and connect it to an Alloplace for testing, run
 
 ```
+git submodule update --init --recursive
+./allo/assist fetch
 ./allo/assist run alloplace://nevyn.places.alloverse.com
 ```
