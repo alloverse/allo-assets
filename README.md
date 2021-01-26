@@ -1,10 +1,12 @@
-# Alloverse app template
+# Alloverse Asset functionality showcase 
 
 This is an Alloverse app. You can 
 [read about Alloverse app](https://alloverse.com/develop-apps/)
 on Alloverse's website.
 
-__psst, you should summarize and explain your project here!__
+This app reads the files.txt and adds graphical entities into the world. 
+
+Only supports models for now.
 
 ## Developing
 
