@@ -9,10 +9,24 @@ local client = Client(
     "asset_sample"
 )
 
-local assets = Asset.Manager(client.client)
-local head = Asset.File("assets/DamagedHelmet.glb")
-assets:add(head)
 
+
+local mainView = ui.View(ui.Bounds(0, 1.5, 0,   1, 1, 1))
+local pos = 0
+
+local assets = Asset.Manager(client.client)
+
+for line in io.lines("files.txt") do
+    print("Adding ".. line)
+    local asset = Asset.File(line)
+    local view = Asset.View(asset, ui.Bounds(pos, 0, 0,   1, 0.5, 0.1))
+    mainView:addSubview(view)
+    assets:add(asset)
+    pos = pos + 1.5
+end
+
+
+assets:add(head)
 
 local app = App(client)
 
@@ -24,8 +38,8 @@ app.client.delegates.onConnected = function ()
     end)
 end
 
-local view = AssetView(head, ui.Bounds(0, 1.5, 0,   1, 0.5, 0.1))
 
-app.mainView = view
+
+app.mainView = mainView
 app:connect()
 app:run()
