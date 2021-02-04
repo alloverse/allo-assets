@@ -1,3 +1,0 @@
-assets/pyramid.glb
-assets/sphere.glb
-assets/cube.glb

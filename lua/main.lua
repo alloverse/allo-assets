@@ -6,7 +6,7 @@ local pretty = require('pl.pretty')
 
 local host = arg[2]
 local client = Client(host, "asset_sample" )
-local app = App(client)
+local app = ui.App(client)
 
 
 -- State for the current selection
@@ -15,13 +15,13 @@ local current = 1
 -- List of our assets
 local assets = {}
 
+local models = { "sphere", "helmet", "torus", "cylinder", }
 -- For each entry in files.txt
-for line in io.lines("files.txt") do
+for _, name in ipairs(models) do
     -- we create FileAssets
-    local asset = Asset.File(line)
-    asset.name = line:match(".+/(.+)%..+")
+    local asset = Asset.File("assets/"..name..".glb")
+    asset.name = name
     table.insert(assets, asset)
-    print("Added " .. line .. " as " .. asset.name)
 end
 
 -- The AssetManager takes care of serving assets added to it.
@@ -30,7 +30,7 @@ app.assetManager:add(assets)
 -- Setup a view to display the seleted asset
 local assetView = ui.View(ui.Bounds(0, 0, 0,   1, 1, 1))
 assetView.specification = function (self)
-    local spec = View.specification(self)
+    local spec = ui.View.specification(self)
     spec.geometry = {
         type = "asset",
         name = assets[current]:id(),
@@ -93,6 +93,4 @@ app.mainView.onInteraction = function (self, inter, body, sender)
     end
 end
 
--- Run the app
-app:connect()
-app:run()
+if app:connect() then app:run() end
