@@ -3,6 +3,7 @@ local modules = (...):gsub(".[^.]+.[^.]+$", '') .. "."
 local class = require('pl.class')
 local tablex = require('pl.tablex')
 local pretty = require('pl.pretty')
+local vec3 = require'allo.deps.alloui.lib.cpml.modules.vec3'
 
 local host = arg[2]
 local client = Client(host, "asset_sample" )
@@ -28,7 +29,8 @@ end
 app.assetManager:add(assets)
 
 -- Setup a view to display the seleted asset
-local assetView = ui.View(ui.Bounds(0, 0, 0,   1, 1, 1))
+local assetView = ui.View(ui.Bounds(0, 0, 0))
+assetView.transform:scale(assetView.transform, vec3(0.5, 0.5, 0.5))
 assetView.specification = function (self)
     local spec = ui.View.specification(self)
     spec.geometry = {
@@ -40,7 +42,7 @@ end
 
 -- Add a label to display the name
 local label = ui.Label({
-    bounds = ui.Bounds(0, 0.5, 0,   1, 1, 0.1),
+    bounds = ui.Bounds(0, 0.7, 0,   1, 1, 0.1),
     text = "Asset Preview",
     lineheight = 0.1,
 })
