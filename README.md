@@ -4,9 +4,7 @@ This is an Alloverse app. You can
 [read about Alloverse app](https://alloverse.com/develop-apps/)
 on Alloverse's website.
 
-This app reads the files.txt and adds graphical entities into the world. 
-
-Only supports models for now.
+This example app displays some assets in your place.
 
 ## Developing
 
