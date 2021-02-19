@@ -16,7 +16,7 @@ local current = 1
 -- List of our assets
 local assets = {}
 
-local models = { "sphere", "helmet", "torus", "cylinder", }
+local models = { "helmet", "sphere", "torus", "cylinder", }
 -- For each entry in files.txt
 for _, name in ipairs(models) do
     -- we create FileAssets
@@ -37,6 +37,7 @@ assetView.specification = function (self)
         type = "asset",
         name = assets[current]:id(),
     }
+    spec.material = { shader_name = "pbr" }
     return spec
 end
 
@@ -81,7 +82,7 @@ next.onActivated = function() switch(1) end
 
 -- Add a little bit of animation
 local animate = true
-app:scheduleAction(0.01, true, function()
+app:scheduleAction(0.03, true, function()
     if app.connected and animate then 
         assetView.bounds:rotate(3.14/180, 0, 1, 0)
         assetView:updateComponents(assetView:specification())
