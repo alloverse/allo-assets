@@ -81,7 +81,7 @@ prev.onActivated = function() switch(-1) end
 next.onActivated = function() switch(1) end
 
 -- Add a little bit of animation
-local animate = true
+local animate = false
 app:scheduleAction(0.03, true, function()
     if app.connected and animate then 
         assetView.bounds:rotate(3.14/180, 0, 1, 0)
