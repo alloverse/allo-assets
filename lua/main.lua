@@ -73,6 +73,14 @@ function switch(dir)
     assetView:updateComponents(assetView:specification())
 end
 
+function add(asset, name)
+    asset.name = name or asset.name
+    table.insert(assets, asset)
+    current = #assets
+    label:setText(asset.name or asset:id())
+    assetView:updateComponents(assetView:specification())
+end
+
 -- Initiate state
 switch(0)
 
@@ -91,8 +99,26 @@ end)
 
 -- Toggle animation when model is touched
 app.mainView.onInteraction = function (self, inter, body, sender)
+    -- body is a list
+    -- 1: string with name of interaction
+    -- 2: true or false
     if body[1] == "poke" and body[2] then
         animate = not animate
+    end
+
+    if body[1] == "accept-file" and body[2] and body[3] then
+        local asset_id = body[3]
+        print("Got a file dropped on me. Downloading and displaying it")
+        pretty.dump(body)
+        -- load and publish the asset
+        app.assetManager:load(asset_id, function (name, asset)
+            if not asset then 
+                print("Did not manage to download ".. name)
+                return
+            end
+            app.assetManager:add(asset, true)
+            add(asset, body[2])
+        end)
     end
 end
 
