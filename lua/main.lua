@@ -30,7 +30,6 @@ app.assetManager:add(assets)
 
 -- Setup a view to display the seleted asset
 local assetView = ui.View(ui.Bounds(0, 0, 0))
-assetView.transform:scale(assetView.transform, vec3(0.5, 0.5, 0.5))
 assetView.specification = function (self)
     local spec = ui.View.specification(self)
     spec.geometry = {
@@ -43,7 +42,7 @@ end
 
 -- Add a label to display the name
 local label = ui.Label({
-    bounds = ui.Bounds(0, 0.7, 0,   1, 1, 0.1),
+    bounds = ui.Bounds(0, 0.7, 0,   1, 0.15, 0.1),
     text = "Asset Preview",
     lineheight = 0.1,
 })
@@ -98,28 +97,23 @@ app:scheduleAction(0.03, true, function()
 end)
 
 -- Toggle animation when model is touched
-app.mainView.onInteraction = function (self, inter, body, sender)
-    -- body is a list
-    -- 1: string with name of interaction
-    -- 2: true or false
-    if body[1] == "poke" and body[2] then
-        animate = not animate
-    end
+app.mainView.onTouchDown = function()
+    animate = not animate
+end
 
-    if body[1] == "accept-file" and body[2] and body[3] then
-        local asset_id = body[3]
-        print("Got a file dropped on me. Downloading and displaying it")
-        pretty.dump(body)
-        -- load and publish the asset
-        app.assetManager:load(asset_id, function (name, asset)
-            if not asset then 
-                print("Did not manage to download ".. name)
-                return
-            end
-            app.assetManager:add(asset, true)
-            add(asset, body[2])
-        end)
-    end
+-- allow user to drop files onto viewer to display them
+app.mainView.acceptedFileExtensions = {'glb'}
+app.mainView.onFileDropped = function(view, filename, asset_id)
+    print("Got a file dropped on me ", filename, asset_id, "Downloading and displaying it...")
+    -- load and publish the asset
+    app.assetManager:load(asset_id, function (name, asset)
+        if not asset then 
+            print("Did not manage to download ".. name)
+            return
+        end
+        app.assetManager:add(asset, true)
+        add(asset, filename)
+    end)
 end
 
 if app:connect() then app:run() end
