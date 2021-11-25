@@ -16,6 +16,11 @@ local current = 1
 -- List of our assets
 local assets = {}
 
+local images = {
+    quit = ui.Asset.File("images/quit.png"),
+}
+app.assetManager:add(images)
+
 local models = { "helmet", "sphere", "torus", "cylinder", }
 -- For each entry in files.txt
 for _, name in ipairs(models) do
@@ -52,6 +57,12 @@ local prev = ui.Button(ui.Bounds(-1, 0, 0,   0.4, 0.4, 0.1))
 prev.label:setText("<-")
 local next = ui.Button(ui.Bounds( 1, 0, 0,   0.4, 0.4, 0.1))
 next.label:setText("->")
+
+local quitButton = app.mainView:addSubview(ui.Button(ui.Bounds( 1, 0.5, 0,   0.1, 0.1, 0.1)))
+quitButton:setDefaultTexture(images.quit)
+quitButton.onActivated = function()
+    app:quit()
+end
 
 -- Add all the views together
 app.mainView.bounds = ui.Bounds(0, 1.5, 0,  1, 1, 0.1)
