@@ -21,6 +21,7 @@ local conversion = {}
 
 local images = {
     quit = ui.Asset.File("images/quit.png"),
+    loading = ui.Asset.File("loading.glb")
 }
 app.assetManager:add(images)
 
@@ -29,12 +30,14 @@ local models = { "helmet", "sphere", "torus", "cylinder", }
 for _, name in ipairs(models) do
     -- we create FileAssets
     local asset = Asset.File("assets/"..name..".glb")
-    asset.name = name
-    table.insert(assets, asset)
+    table.insert(assets, {
+        asset = asset,
+        name = name,
+        scale = 0.8,
+    })
+    -- The AssetManager takes care of serving assets added to it.
+    app.assetManager:add(asset)
 end
-
--- The AssetManager takes care of serving assets added to it.
-app.assetManager:add(assets)
 
 -- Setup a view to display the seleted asset
 local assetView = ui.View(ui.Bounds(0, 0, 0))
@@ -42,7 +45,7 @@ assetView.specification = function (self)
     local spec = ui.View.specification(self)
     spec.geometry = {
         type = "asset",
-        name = assets[current]:id(),
+        name = assets[current].asset:id(),
     }
     spec.material = { shader_name = "pbr" }
     return spec
@@ -80,8 +83,14 @@ function switch(dir)
     current = current + dir
     if current < 1 then current = #assets end
     if current > #assets then current = 1 end
+
+    local item = assets[current]
     -- Set the new asset name
-    label:setText(assets[current].name)
+    label:setText(item.name)
+    local scale = item.scale or 1
+    assetView.bounds:moveToOrigin()
+    assetView.bounds:scale(scale, scale, scale)
+
     -- Ask the asset view to send its new model information to the server
     assetView:updateComponents(assetView:specification())
 end
@@ -89,11 +98,24 @@ end
 function add(asset, name, scale)
     scale = scale or 1
     asset.name = name or asset.name
-    table.insert(assets, asset)
+    table.insert(assets, {
+        asset = asset,
+        name = name,
+        scale = scale,
+    })
     current = #assets
-    label:setText(asset.name or asset:id())
-    assetView.bounds:scale(scale, scale, scale)
-    assetView:updateComponents(assetView:specification())
+    switch(0)
+end
+
+function set(asset, name, scale)
+    for i in ipairs(assets) do
+        local item = assets[i]
+        if item.name == name then
+            item.asset = asset
+            item.scale = scale or 1
+        end
+        if i == current then switch(0) end
+    end
 end
 
 -- Initiate state
@@ -116,12 +138,7 @@ app:scheduleAction(1, true, function()
     if app.connected then
         for id, item in pairs(conversion) do
             print("check " .. id)
-            local asset = item:check()
-            if asset then
-                app.assetManager:add(asset, tonumber)
-                add(asset, item.filename, item.scale)
-                conversion[id] = nil
-            end
+            item:check()
         end
     end
 end)
@@ -156,7 +173,7 @@ app.mainView.onFileDropped = function(view, filename, asset_id)
                 print("Did not manage to download ".. name)
                 return
             end
-
+            
             conversion[asset:id()] = {
                 openscadpath = "/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD",
                 blenderpath = "/Volumes/Data/Applications/Blender.app/Contents/MacOS/Blender",
@@ -172,6 +189,8 @@ app.mainView.onFileDropped = function(view, filename, asset_id)
                     scadfile:close()
 
                     self.handle = io.popen("sh convert_scad.sh \"" .. self.scadfile .. "\" \"" .. self.resultfile .. "\" &")
+                    self.handle:close()
+                    add(images.loading, self.filename, 1)
                 end,
                 check = function (self)
                     local resultfile = io.open(self.resultfile, "rb")
@@ -182,9 +201,12 @@ app.mainView.onFileDropped = function(view, filename, asset_id)
                         print("reading result")
                         local asset = Asset(resultfile:read("*a"))
                         resultfile:close()
-                        self.handle:close()
+
                         os.remove(self.resultfile)
-                        return asset
+
+                        app.assetManager:add(asset, tonumber)
+                        set(asset, self.filename, 0.01)
+                        conversion[self.asset:id()] = nil
                     end
                 end,
             }
