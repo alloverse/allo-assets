@@ -42,6 +42,7 @@ assetView.specification = function (self)
         name = assets[current]:id(),
     }
     spec.material = { shader_name = "pbr" }
+    table.merge(spec, self.customSpecAttributes)
     return spec
 end
 
@@ -107,10 +108,33 @@ app:scheduleAction(0.03, true, function()
     end
 end)
 
+
+app.mainView.onPointerEntered = function()
+    assetView.customSpecAttributes = {
+        material = {
+            colorswapFrom = {1,0,1,1},
+            colorswapTo = {0, 1, 0, 1},
+        }
+    }
+    assetView:markAsDirty()
+end
+
+app.mainView.onPointerExited = function()
+    assetView.customSpecAttributes = {
+        material = {
+            colorswapFrom = {1,0,1,1},
+            colorswapTo = {0, 0, 1, 1},
+        }
+    }
+    assetView:markAsDirty()
+end
+
 -- Toggle animation when model is touched
 app.mainView.onTouchDown = function()
     animate = not animate
 end
+
+app.mainView.onPointerExited()
 
 -- allow user to drop files onto viewer to display them
 app.mainView.acceptedFileExtensions = {'glb'}
