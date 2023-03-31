@@ -34,44 +34,37 @@ end
 app.assetManager:add(assets)
 
 -- Setup a view to display the seleted asset
-local assetView = ui.View(ui.Bounds(0, 0, 0))
-assetView.specification = function (self)
-    local spec = ui.View.specification(self)
-    spec.geometry = {
-        type = "asset",
-        name = assets[current]:id(),
-    }
-    spec.material = { shader_name = "pbr" }
-    table.merge(spec, self.customSpecAttributes)
-    return spec
-end
+local assetView = ui.ModelView(ui.Bounds(0, 0, 0.1), assets[current])
 
 -- Add a label to display the name
 local label = ui.Label({
-    bounds = ui.Bounds(0, 0.7, 0,   1, 0.15, 0.1),
+    bounds = ui.Bounds(0, 0.7, 0.1,   1, 0.15, 0.1),
     text = "Asset Preview",
     lineheight = 0.1,
 })
 
 -- and navigation buttons to go back and forth between assets
-local prev = ui.Button(ui.Bounds(-1, 0, 0,   0.4, 0.4, 0.1))
+local prev = ui.Button(ui.Bounds(-1, 0, 0.1,   0.4, 0.4, 0.1))
 prev.label:setText("<-")
-local next = ui.Button(ui.Bounds( 1, 0, 0,   0.4, 0.4, 0.1))
+local next = ui.Button(ui.Bounds( 1, 0, 0.1,   0.4, 0.4, 0.1))
 next.label:setText("->")
 
-local quitButton = app.mainView:addSubview(ui.Button(ui.Bounds( 1, 0.5, 0,   0.1, 0.1, 0.1)))
+local quitButton = app.mainView:addSubview(ui.Button(ui.Bounds( 1, 0.5, 0.1,   0.1, 0.1, 0.1)))
 quitButton:setDefaultTexture(images.quit)
 quitButton.onActivated = function()
     app:quit()
 end
 
 -- Add all the views together
-app.mainView.bounds = ui.Bounds(0, 1.5, 0,  1, 1, 0.1)
+app.mainView.bounds = ui.Bounds(0, 1.5, 0,  1+0.8+1, 1, 0.1)
 app.mainView.grabbable = true
 app.mainView:addSubview(prev)
 app.mainView:addSubview(next)
 app.mainView:addSubview(label)
 app.mainView:addSubview(assetView)
+
+-- copy the original bounds so we can reset it later
+local assetViewBounds = assetView.bounds:copy();
 
 -- asset switching logic
 function switch(dir)
@@ -80,16 +73,39 @@ function switch(dir)
     if current > #assets then current = 1 end
     -- Set the new asset name
     label:setText(assets[current].name)
-    -- Ask the asset view to send its new model information to the server
-    assetView:updateComponents(assetView:specification())
+
+    -- Set the asset
+    local asset = assets[current]
+    assetView.asset = asset
+
+    -- Reset the bounds
+    assetView.bounds = assetViewBounds:copy()
+    -- Try to load a model from selected asset
+    local model = asset:model()
+    -- Find the models size by getting the bounding box
+    local bb = model:getAABB()
+    if bb then
+        -- Move model to the center, if it's a bit off
+        assetView.bounds:move(-bb.center.x, -bb.center.y, -bb.center.z)
+        
+        -- Scale the model to fit the box
+        if bb.size.x > 0 then
+            local s = 1/bb.size.x
+            assetView.bounds:scale(s,s,s)
+            assetView.collider = bb
+        end
+    end
+
+    assetView:markAsDirty()
 end
 
 function add(asset, name)
     asset.name = name or asset.name
     table.insert(assets, asset)
-    current = #assets
     label:setText(asset.name or asset:id())
-    assetView:updateComponents(assetView:specification())
+    assetView:markAsDirty()
+    current = #assets
+    switch(0)
 end
 
 -- Initiate state
@@ -104,7 +120,7 @@ local animate = false
 app:scheduleAction(0.03, true, function()
     if app.connected and animate then 
         assetView.bounds:rotate(3.14/180, 0, 1, 0)
-        assetView:updateComponents(assetView:specification())
+        assetView:markAsDirty()
     end
 end)
 
@@ -130,7 +146,7 @@ app.mainView.onPointerExited = function()
 end
 
 -- Toggle animation when model is touched
-app.mainView.onTouchDown = function()
+assetView.onTouchDown = function()
     animate = not animate
 end
 
@@ -138,6 +154,7 @@ app.mainView.onPointerExited()
 
 -- allow user to drop files onto viewer to display them
 app.mainView.acceptedFileExtensions = {'glb'}
+assetView.acceptedFileExtensions = app.mainView.acceptedFileExtensions
 app.mainView.onFileDropped = function(view, filename, asset_id)
     print("Got a file dropped on me ", filename, asset_id, "Downloading and displaying it...")
     -- load and publish the asset
@@ -150,5 +167,6 @@ app.mainView.onFileDropped = function(view, filename, asset_id)
         add(asset, filename)
     end)
 end
+assetView.onFileDropped = app.mainView.onFileDropped
 
 if app:connect() then app:run() end
