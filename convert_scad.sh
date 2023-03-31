@@ -1,6 +1,6 @@
 tmpfile=$(mktemp /tmp/model.XXXXXX)
 scadfile=$1
-stlfile=$tmpfile.stl
+stlfile=$tmpfile.3mf
 glbfile=$tmpfile.glb
 resultfile=$2
 
